@@ -1,0 +1,21 @@
+{
+  "hooks": {
+    "PreToolUse": [
+      {
+        "matcher": "Bash|PowerShell|Read",
+        "hooks": [
+          { "type": "command", "command": "py .claude/hooks/secret_guard.py" }
+        ]
+      }
+    ],
+    "PostToolUse": [
+      {
+        "matcher": "Edit|Write|MultiEdit",
+        "hooks": [
+          { "type": "command", "command": "py .claude/hooks/format_python.py" },
+          { "type": "command", "command": "py .claude/hooks/run_tests.py" }
+        ]
+      }
+    ]
+  }
+}
