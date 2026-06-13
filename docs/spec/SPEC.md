@@ -143,15 +143,16 @@ When the remaining table empties → **"All settled 🎉"** summary showing:
   sample input (receipt) paired with the exact expected JSON output — so Claude has a
   concrete pattern to follow. *(Requirement #3.)*
   - The example receipt is [`docs/receipt_example.jpg`](../receipt_example.jpg) (an `am:pm
-    city market` receipt). Its three charged line items map to the ideal output below; the
-    subtotal (`ס. ביניים`), VAT (`מע"מ`), and total rows are ignored, and the `2 X 6.60`
-    quantity row is treated as a single `price` of `13.20` (the qty-explode into separate
-    rows happens later in the editable table, not in extraction):
+    city market` receipt). The LLM extracts **final, per-unit items** so the output drops
+    straight into the table with no further explode: the subtotal (`ס. ביניים`), VAT
+    (`מע"מ`), and total rows are ignored, and the `2 X 6.60` quantity row is split by the
+    LLM into **two separate rows of `6.60` each** (one row per unit):
 
     ```json
     [
-      { "name": "נביעות עסק 96", "price": 36.90 },
-      { "name": "קוטג' 5% תנובה 250 גר", "price": 13.20 },
+      { "name": "גבינת עמק 9%", "price": 36.90 },
+      { "name": "קוטג' 5% תנובה 250 גר", "price": 6.60 },
+      { "name": "קוטג' 5% תנובה 250 גר", "price": 6.60 },
       { "name": "שקית ללקוח", "price": 0.10 }
     ]
     ```
@@ -163,8 +164,10 @@ When the remaining table empties → **"All settled 🎉"** summary showing:
   validation is dropped and surfaced to the user rather than crashing the request. This
   guarantees the LLM response maps cleanly onto the `Item` schema before it reaches the
   table.
-- Prompt intent: *"Extract every line item from this receipt. Return a JSON array of
-  `{name, price}`; ignore subtotal / tax / total / tip rows; prices as numbers."*
+- Prompt intent: *"Extract every line item from this receipt as final, per-unit rows.
+  Return a JSON array of `{name, price}`; ignore subtotal / tax / total / tip rows; prices
+  as numbers. If a line shows a quantity (e.g. `2 X 6.60`), emit one row per unit at the
+  unit price — never a combined line."*
 - The uploaded image is **discarded after extraction** (never stored).
 
 ## 9. Edge cases
