@@ -376,6 +376,12 @@
   @keyframes spin { to { transform: rotate(360deg); } }
 
   .file-drop {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    width: 100%;
+    min-height: 8.5rem;
     border: 2px dashed var(--line);
     border-radius: 12px;
     padding: 1.6rem 1rem;
@@ -385,8 +391,23 @@
     transition: border-color .15s ease, background .15s ease;
   }
   .file-drop:hover { border-color: var(--ink); background: rgba(33,26,18,.02); }
-  .file-drop .ic { font-size: 2rem; display: block; margin-bottom: .35rem; }
-  .file-name { font-family: var(--mono); font-size: .8rem; color: var(--ink); margin-top: .6rem; }
+  .file-drop .ic { font-size: 2rem; line-height: 1; margin-bottom: .45rem; }
+  .file-hint {
+    display: block;
+    max-width: 17rem;
+    margin-top: .35rem;
+    font-size: .82rem;
+    line-height: 1.25;
+    color: var(--ink-soft);
+  }
+  .file-name {
+    max-width: 100%;
+    font-family: var(--mono);
+    font-size: .8rem;
+    color: var(--ink);
+    margin-top: .6rem;
+    overflow-wrap: anywhere;
+  }
 
   @media (prefers-reduced-motion: reduce) {
     *, *::before, *::after { animation: none !important; transition: none !important; }
@@ -426,7 +447,8 @@
     <p class="lede">We'll pull out the line items so you can check them before splitting.</p>
     <label class="file-drop" for="receipt-input">
       <span class="ic">🧾</span>
-      Tap to choose or take a photo
+      Upload photo
+      <span class="file-hint">(Phase 2 of the app will allow direct camera access)</span>
       <div class="file-name" id="file-name"></div>
     </label>
     <input type="file" id="receipt-input" accept="image/*" capture="environment" hidden />
@@ -615,6 +637,7 @@ $("go-manual").onclick = () => {
 };
 $("go-camera").onclick = () => {
   $("file-name").textContent = "";
+  $("receipt-input").value = "";
   state.pendingFile = null;
   $("extract-btn").disabled = true;
   hide("camera-error");
