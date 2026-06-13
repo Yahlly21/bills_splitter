@@ -16,7 +16,7 @@ add one env var, ship; no Dockerfile needed). The free instance spins down after
 idle, so the **first request after a quiet spell takes ~30–60 s to wake**, then it's snappy.
 That cold-start cost is a non-issue here and actually reinforces the one-time-use design.
 
-> _Set your deployed URL here once live, e.g._ `https://bills-splitter.onrender.com`
+**▶ Live app: https://bills-splitter.onrender.com**
 
 ## Highlights
 
