@@ -84,16 +84,6 @@
     margin: .35rem 0 .5rem;
     letter-spacing: -.01em;
   }
-  .stub {
-    font-family: var(--mono);
-    font-size: .64rem;
-    letter-spacing: .12em;
-    color: var(--ink-soft);
-    display: flex;
-    justify-content: center;
-    gap: .8rem;
-    text-transform: uppercase;
-  }
   .rule {
     border: 0;
     border-top: 2px dashed var(--line);
@@ -419,7 +409,6 @@
   <header>
     <div class="eyebrow">Friday Brunch</div>
     <h1>Bill&nbsp;Splitter</h1>
-    <div class="stub"><span id="stub-party">PARTY OF —</span><span>·</span><span>TIP INCLUDED</span></div>
   </header>
   <hr class="rule" />
 
@@ -747,7 +736,6 @@ $("table-continue").onclick = async () => {
 // ---- Finalize ----
 function renderFinalize(bill) {
   const subtotal = bill.items.reduce((s, i) => s + i.price, 0);
-  $("stub-party").textContent = `${bill.items.length} ITEM${bill.items.length === 1 ? "" : "S"}`;
   let html = "";
   bill.items.forEach((i) => {
     html += `<div class="leader"><span class="lbl">${escapeHtml(i.name)}</span><span class="dots"></span><span class="val">${fmt(i.price)}</span></div>`;
