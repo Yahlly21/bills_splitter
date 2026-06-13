@@ -142,8 +142,21 @@ When the remaining table empties → **"All settled 🎉"** summary showing:
 - **One-shot prompt:** the prompt includes an **example receipt** as a worked example —
   sample input (receipt) paired with the exact expected JSON output — so Claude has a
   concrete pattern to follow. *(Requirement #3.)*
-  - A clearly marked placeholder in the prompt template holds the example receipt and its
-    ideal JSON output; this is filled in during the LLM build step.
+  - The example receipt is [`docs/receipt_example.jpg`](../receipt_example.jpg) (an `am:pm
+    city market` receipt). Its three charged line items map to the ideal output below; the
+    subtotal (`ס. ביניים`), VAT (`מע"מ`), and total rows are ignored, and the `2 X 6.60`
+    quantity row is treated as a single `price` of `13.20` (the qty-explode into separate
+    rows happens later in the editable table, not in extraction):
+
+    ```json
+    [
+      { "name": "נביעות עסק 96", "price": 36.90 },
+      { "name": "קוטג' 5% תנובה 250 גר", "price": 13.20 },
+      { "name": "שקית ללקוח", "price": 0.10 }
+    ]
+    ```
+  - This example pair is embedded into the prompt template at a clearly marked placeholder
+    during the LLM build step.
 - **Structured output:** *(Requirement #3.1)* extraction is constrained to a schema using
   the Anthropic SDK's structured-output mechanism (tool / response-format style),
   validated server-side against a Pydantic `ExtractedBill` model. Any item that fails
