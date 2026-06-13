@@ -1,0 +1,916 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover" />
+<title>Friday Brunch · Bill Splitter</title>
+<link rel="preconnect" href="https://fonts.googleapis.com" />
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+<link href="https://fonts.googleapis.com/css2?family=Bricolage+Grotesque:opsz,wght@12..96,600;12..96,700;12..96,800&family=DM+Sans:opsz,wght@9..40,400;9..40,500;9..40,600&family=Spline+Sans+Mono:wght@400;500;600;700&display=swap" rel="stylesheet" />
+<style>
+  /* ---- Tokens: "The Check" — a sunlit diner-receipt identity ----
+     paper  #F4F1E6  warm receipt stock (lifted off the cream cliché toward sun)
+     ink    #211A12  espresso, the printed text
+     jam    #DB3B2B  tomato-jam stamp red — the accent, used with restraint
+     yolk   #F2B705  yolk yellow — secondary highlights
+     herb   #3F7D5B  herb green — "settled / paid" success
+  */
+  :root {
+    --paper: #F4F1E6;
+    --paper-edge: #ECE7D6;
+    --ink: #211A12;
+    --ink-soft: #6F6552;
+    --jam: #DB3B2B;
+    --jam-deep: #B62C20;
+    --yolk: #F2B705;
+    --herb: #3F7D5B;
+    --line: #CFC7B2;
+    --radius: 14px;
+    --disp: "Bricolage Grotesque", system-ui, sans-serif;
+    --body: "DM Sans", system-ui, sans-serif;
+    --mono: "Spline Sans Mono", ui-monospace, monospace;
+  }
+
+  * { box-sizing: border-box; }
+  html, body { margin: 0; }
+  body {
+    font-family: var(--body);
+    color: var(--ink);
+    background:
+      radial-gradient(120% 60% at 50% -10%, #FBF7E9 0%, var(--paper) 55%) fixed;
+    min-height: 100vh;
+    display: flex;
+    justify-content: center;
+    padding: clamp(0.75rem, 3vw, 2.5rem);
+    -webkit-font-smoothing: antialiased;
+  }
+
+  .check {
+    width: 100%;
+    max-width: 460px;
+    background: #FCFAF2;
+    border-radius: var(--radius);
+    box-shadow: 0 1px 0 rgba(0,0,0,.04), 0 18px 40px -24px rgba(33,26,18,.45);
+    position: relative;
+    padding: 1.5rem 1.35rem 1.65rem;
+    align-self: flex-start;
+  }
+  /* Perforated top edge of the receipt */
+  .check::before {
+    content: "";
+    position: absolute;
+    left: 0; right: 0; top: -7px;
+    height: 14px;
+    background:
+      radial-gradient(circle at 9px 7px, transparent 6px, #FCFAF2 6.5px) repeat-x;
+    background-size: 18px 14px;
+  }
+
+  /* ---- Header ---- */
+  header { text-align: center; }
+  .eyebrow {
+    font-family: var(--mono);
+    font-size: .68rem;
+    letter-spacing: .32em;
+    text-transform: uppercase;
+    color: var(--jam);
+    font-weight: 600;
+  }
+  h1 {
+    font-family: var(--disp);
+    font-weight: 800;
+    font-size: clamp(1.7rem, 7vw, 2.15rem);
+    line-height: .98;
+    margin: .35rem 0 .5rem;
+    letter-spacing: -.01em;
+  }
+  .stub {
+    font-family: var(--mono);
+    font-size: .64rem;
+    letter-spacing: .12em;
+    color: var(--ink-soft);
+    display: flex;
+    justify-content: center;
+    gap: .8rem;
+    text-transform: uppercase;
+  }
+  .rule {
+    border: 0;
+    border-top: 2px dashed var(--line);
+    margin: 1.15rem 0;
+  }
+
+  /* ---- Screens ---- */
+  .screen { display: none; }
+  .screen.active { display: block; animation: rise .32s ease both; }
+  @keyframes rise { from { opacity: 0; transform: translateY(6px); } }
+
+  h2.step {
+    font-family: var(--disp);
+    font-weight: 700;
+    font-size: 1.28rem;
+    margin: 0 0 .2rem;
+    letter-spacing: -.01em;
+  }
+  p.lede { color: var(--ink-soft); margin: 0 0 1.15rem; font-size: .94rem; }
+
+  /* ---- Buttons ---- */
+  button { font-family: var(--body); cursor: pointer; }
+  .btn {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    gap: .5rem;
+    width: 100%;
+    border: 2px solid var(--ink);
+    background: var(--ink);
+    color: #FCFAF2;
+    font-weight: 600;
+    font-size: 1rem;
+    padding: .85rem 1rem;
+    border-radius: 11px;
+    transition: transform .08s ease, box-shadow .15s ease, background .15s ease;
+  }
+  .btn:hover { box-shadow: 0 6px 0 -2px rgba(33,26,18,.22); }
+  .btn:active { transform: translateY(2px); box-shadow: none; }
+  .btn.jam { background: var(--jam); border-color: var(--jam); }
+  .btn.jam:hover { box-shadow: 0 6px 0 -2px var(--jam-deep); }
+  .btn.ghost { background: transparent; color: var(--ink); }
+  .btn.ghost:hover { background: rgba(33,26,18,.05); box-shadow: none; }
+  .btn-row { display: flex; gap: .65rem; margin-top: 1.1rem; }
+  .btn-row .btn { width: auto; flex: 1; }
+  .btn:disabled { opacity: .5; cursor: not-allowed; }
+
+  .entry-grid { display: grid; gap: .85rem; }
+  .entry-card {
+    text-align: left;
+    border: 2px solid var(--line);
+    background: #fff;
+    border-radius: 12px;
+    padding: 1.1rem 1.15rem;
+    transition: border-color .15s ease, transform .08s ease, box-shadow .15s ease;
+  }
+  .entry-card:hover { border-color: var(--ink); box-shadow: 0 8px 0 -3px rgba(33,26,18,.12); }
+  .entry-card:active { transform: translateY(2px); box-shadow: none; }
+  .entry-card .big { font-family: var(--disp); font-weight: 700; font-size: 1.15rem; display:block; }
+  .entry-card .sub { color: var(--ink-soft); font-size: .85rem; }
+  .entry-card .ic { font-size: 1.5rem; float: right; }
+
+  /* ---- Item table (receipt rows) ---- */
+  .col-head, .item-row {
+    display: grid;
+    grid-template-columns: 1fr 5.2rem 3.1rem 1.8rem;
+    gap: .4rem;
+    align-items: center;
+  }
+  .col-head {
+    font-family: var(--mono);
+    font-size: .6rem;
+    letter-spacing: .14em;
+    text-transform: uppercase;
+    color: var(--ink-soft);
+    padding: 0 .15rem .35rem;
+  }
+  .col-head .r { text-align: right; }
+  .col-head .c { text-align: center; }
+  .item-row { margin-bottom: .45rem; }
+  .item-row input {
+    font-family: var(--body);
+    font-size: .95rem;
+    border: 1.5px solid var(--line);
+    background: #fff;
+    border-radius: 8px;
+    padding: .55rem .6rem;
+    width: 100%;
+    color: var(--ink);
+  }
+  .item-row input.price, .item-row input.qty {
+    font-family: var(--mono);
+    text-align: right;
+  }
+  .item-row input.qty { text-align: center; padding-left: .3rem; padding-right: .3rem; }
+  .item-row input:focus, .field input:focus, .field select:focus {
+    outline: 2px solid var(--jam);
+    outline-offset: 1px;
+    border-color: var(--jam);
+  }
+  .trash {
+    border: none;
+    background: none;
+    font-size: 1.05rem;
+    color: var(--ink-soft);
+    padding: .2rem;
+    border-radius: 6px;
+    line-height: 1;
+  }
+  .trash:hover { color: var(--jam); background: rgba(219,59,43,.08); }
+  .add-row {
+    border: 1.5px dashed var(--line);
+    background: transparent;
+    color: var(--ink-soft);
+    width: 100%;
+    padding: .6rem;
+    border-radius: 9px;
+    font-weight: 600;
+    margin-top: .25rem;
+  }
+  .add-row:hover { border-color: var(--ink); color: var(--ink); }
+
+  /* ---- Fields ---- */
+  .field { margin-bottom: .9rem; }
+  .field label {
+    display: block;
+    font-family: var(--mono);
+    font-size: .64rem;
+    letter-spacing: .12em;
+    text-transform: uppercase;
+    color: var(--ink-soft);
+    margin-bottom: .35rem;
+  }
+  .field input, .field select {
+    font-family: var(--body);
+    font-size: 1rem;
+    border: 1.5px solid var(--line);
+    background: #fff;
+    border-radius: 9px;
+    padding: .65rem .7rem;
+    width: 100%;
+    color: var(--ink);
+  }
+  .field .mono { font-family: var(--mono); }
+  .inline { display: flex; gap: .7rem; }
+  .inline .field { flex: 1; }
+
+  /* ---- Method radios ---- */
+  .method { display: grid; gap: .7rem; }
+  .method label {
+    display: block;
+    border: 2px solid var(--line);
+    border-radius: 12px;
+    padding: .95rem 1rem;
+    cursor: pointer;
+    transition: border-color .15s ease, background .15s ease;
+  }
+  .method label:hover { border-color: var(--ink-soft); }
+  .method input { position: absolute; opacity: 0; }
+  .method label:has(input:checked) { border-color: var(--jam); background: rgba(219,59,43,.05); }
+  .method .m-title { font-family: var(--disp); font-weight: 700; font-size: 1.05rem; }
+  .method .m-sub { color: var(--ink-soft); font-size: .85rem; margin-top: .1rem; }
+
+  /* ---- Leader (dotted) rows for totals ---- */
+  .leader { display: flex; align-items: baseline; font-size: .95rem; margin: .35rem 0; }
+  .leader .lbl { color: var(--ink); }
+  .leader .dots { flex: 1; border-bottom: 2px dotted var(--line); margin: 0 .45rem; transform: translateY(-.28rem); }
+  .leader .val { font-family: var(--mono); font-variant-numeric: tabular-nums; }
+  .leader.big .lbl { font-family: var(--disp); font-weight: 700; font-size: 1.05rem; }
+  .leader.big .val { font-size: 1.05rem; font-weight: 700; }
+
+  /* ---- The stamped per-person amount ---- */
+  .stamp {
+    text-align: center;
+    border: 3px solid var(--jam);
+    color: var(--jam);
+    border-radius: 14px;
+    padding: 1.1rem 1rem;
+    margin: 1.1rem 0;
+    transform: rotate(-1.4deg);
+    animation: thunk .4s cubic-bezier(.2,1.3,.4,1) both;
+  }
+  @keyframes thunk { from { transform: rotate(-1.4deg) scale(1.35); opacity: 0; } }
+  .stamp .who { font-family: var(--mono); font-size: .68rem; letter-spacing: .22em; text-transform: uppercase; }
+  .stamp .amt { font-family: var(--disp); font-weight: 800; font-size: 2.7rem; line-height: 1; margin-top: .2rem; font-variant-numeric: tabular-nums; }
+  .stamp .per { font-size: .82rem; color: var(--jam-deep); margin-top: .2rem; }
+
+  /* ---- Settle workspace ---- */
+  .panel-title {
+    font-family: var(--mono);
+    font-size: .64rem;
+    letter-spacing: .16em;
+    text-transform: uppercase;
+    color: var(--ink-soft);
+    margin: 1.2rem 0 .5rem;
+    display: flex;
+    align-items: center;
+    gap: .5rem;
+  }
+  .panel-title::after { content: ""; flex: 1; border-top: 1.5px dotted var(--line); }
+
+  .claim-row {
+    display: grid;
+    grid-template-columns: 1.4rem 1fr auto;
+    gap: .55rem;
+    align-items: center;
+    padding: .5rem .15rem;
+    border-bottom: 1px dotted var(--line);
+  }
+  .claim-row input[type=checkbox] { width: 1.15rem; height: 1.15rem; accent-color: var(--jam); }
+  .claim-row .nm { font-size: .95rem; }
+  .claim-row .bal { font-family: var(--mono); font-size: .72rem; color: var(--ink-soft); }
+  .claim-row .right { display: flex; align-items: center; gap: .5rem; }
+  .claim-row .price { font-family: var(--mono); font-variant-numeric: tabular-nums; font-size: .95rem; }
+  .divn { display: inline-flex; align-items: center; gap: .25rem; font-family: var(--mono); font-size: .72rem; color: var(--ink-soft); }
+  .divn input { width: 2.6rem; text-align: center; font-family: var(--mono); border: 1.5px solid var(--line); border-radius: 6px; padding: .25rem; }
+
+  .log-entry {
+    border: 1.5px solid var(--line);
+    border-radius: 10px;
+    padding: .65rem .75rem;
+    margin-bottom: .55rem;
+    background: #fff;
+  }
+  .log-entry .head { display: flex; justify-content: space-between; align-items: baseline; }
+  .log-entry .nm { font-family: var(--disp); font-weight: 700; }
+  .log-entry .tot { font-family: var(--mono); font-weight: 600; font-variant-numeric: tabular-nums; }
+  .log-entry .det { font-size: .8rem; color: var(--ink-soft); margin-top: .25rem; }
+  .log-entry .det .tip { color: var(--herb); }
+
+  .totals-box {
+    background: var(--paper);
+    border-radius: 11px;
+    padding: .85rem 1rem;
+    margin-top: 1rem;
+  }
+
+  .done-stamp {
+    text-align: center;
+    border: 3px double var(--herb);
+    color: var(--herb);
+    border-radius: 14px;
+    padding: 1rem;
+    margin: 1.1rem 0 .8rem;
+    font-family: var(--disp);
+    font-weight: 800;
+    font-size: 1.4rem;
+    letter-spacing: .02em;
+    animation: thunk .4s cubic-bezier(.2,1.3,.4,1) both;
+  }
+
+  .nudge {
+    background: rgba(242,183,5,.16);
+    border: 1.5px solid var(--yolk);
+    border-radius: 10px;
+    padding: .7rem .85rem;
+    font-size: .88rem;
+    margin-top: .8rem;
+  }
+  .nudge strong { font-weight: 600; }
+
+  .notice {
+    font-size: .85rem;
+    border-radius: 9px;
+    padding: .6rem .75rem;
+    margin: .65rem 0;
+  }
+  .notice.error { background: rgba(219,59,43,.1); color: var(--jam-deep); border: 1px solid rgba(219,59,43,.3); }
+  .notice.warn { background: rgba(242,183,5,.16); border: 1px solid var(--yolk); }
+  .notice.hidden { display: none; }
+
+  .spinner {
+    width: 30px; height: 30px;
+    border: 3px solid var(--line);
+    border-top-color: var(--jam);
+    border-radius: 50%;
+    margin: 1.4rem auto;
+    animation: spin .8s linear infinite;
+  }
+  @keyframes spin { to { transform: rotate(360deg); } }
+
+  .file-drop {
+    border: 2px dashed var(--line);
+    border-radius: 12px;
+    padding: 1.6rem 1rem;
+    text-align: center;
+    color: var(--ink-soft);
+    cursor: pointer;
+    transition: border-color .15s ease, background .15s ease;
+  }
+  .file-drop:hover { border-color: var(--ink); background: rgba(33,26,18,.02); }
+  .file-drop .ic { font-size: 2rem; display: block; margin-bottom: .35rem; }
+  .file-name { font-family: var(--mono); font-size: .8rem; color: var(--ink); margin-top: .6rem; }
+
+  @media (prefers-reduced-motion: reduce) {
+    *, *::before, *::after { animation: none !important; transition: none !important; }
+  }
+</style>
+</head>
+<body>
+<main class="check" role="main">
+  <header>
+    <div class="eyebrow">Friday Brunch</div>
+    <h1>Bill&nbsp;Splitter</h1>
+    <div class="stub"><span id="stub-party">PARTY OF —</span><span>·</span><span>TIP INCLUDED</span></div>
+  </header>
+  <hr class="rule" />
+
+  <!-- 1. Entry -->
+  <section class="screen active" id="screen-entry">
+    <h2 class="step">Start the check</h2>
+    <p class="lede">Enter the bill yourself, or snap the receipt and let us read it.</p>
+    <div class="entry-grid">
+      <button class="entry-card" id="go-manual">
+        <span class="ic">✎</span>
+        <span class="big">Enter manually</span>
+        <span class="sub">Type each item and its price.</span>
+      </button>
+      <button class="entry-card" id="go-camera">
+        <span class="ic">📷</span>
+        <span class="big">Use camera</span>
+        <span class="sub">Photograph the receipt to fill the table.</span>
+      </button>
+    </div>
+  </section>
+
+  <!-- 2. Camera -->
+  <section class="screen" id="screen-camera">
+    <h2 class="step">Read the receipt</h2>
+    <p class="lede">We'll pull out the line items so you can check them before splitting.</p>
+    <label class="file-drop" for="receipt-input">
+      <span class="ic">🧾</span>
+      Tap to choose or take a photo
+      <div class="file-name" id="file-name"></div>
+    </label>
+    <input type="file" id="receipt-input" accept="image/*" capture="environment" hidden />
+    <div class="notice error hidden" id="camera-error"></div>
+    <div class="spinner" id="camera-spinner" hidden></div>
+    <div class="btn-row">
+      <button class="btn ghost" data-back="entry">Back</button>
+      <button class="btn jam" id="extract-btn" disabled>Read items</button>
+    </div>
+  </section>
+
+  <!-- 3. Table -->
+  <section class="screen" id="screen-table">
+    <h2 class="step">The items</h2>
+    <p class="lede">Add, edit, or remove rows. A quantity above 1 becomes separate lines.</p>
+    <div class="notice warn hidden" id="extract-warnings"></div>
+    <div class="col-head">
+      <span>Item</span><span class="r">Price</span><span class="c">Qty</span><span></span>
+    </div>
+    <div id="rows"></div>
+    <button class="add-row" id="add-row">+ Add item</button>
+    <div class="notice error hidden" id="table-error"></div>
+    <div class="btn-row">
+      <button class="btn ghost" data-back="entry">Back</button>
+      <button class="btn" id="table-continue">Continue</button>
+    </div>
+  </section>
+
+  <!-- 4. Finalize -->
+  <section class="screen" id="screen-finalize">
+    <h2 class="step">Is this bill finalized?</h2>
+    <p class="lede">Give the check one last look. You can still go back to edit it.</p>
+    <div id="finalize-summary"></div>
+    <div class="btn-row">
+      <button class="btn ghost" id="finalize-back">Back to items</button>
+      <button class="btn jam" id="finalize-continue">Continue to split</button>
+    </div>
+  </section>
+
+  <!-- 5. Split method -->
+  <section class="screen" id="screen-method">
+    <h2 class="step">How are we splitting?</h2>
+    <p class="lede">Even across the table, or settle each person and remove what they paid.</p>
+    <div class="method">
+      <label>
+        <input type="radio" name="method" value="even" checked />
+        <div class="m-title">Split evenly</div>
+        <div class="m-sub">One amount per person, tip folded in.</div>
+      </label>
+      <label>
+        <input type="radio" name="method" value="individual" />
+        <div class="m-title">Settle individually</div>
+        <div class="m-sub">Check off what each person had and mark them paid.</div>
+      </label>
+    </div>
+
+    <div id="even-fields" style="margin-top:1.15rem">
+      <div class="inline">
+        <div class="field">
+          <label for="people">People</label>
+          <input type="number" id="people" class="mono" min="1" step="1" value="2" inputmode="numeric" />
+        </div>
+        <div class="field">
+          <label for="tip-even">Tip %</label>
+          <input type="number" id="tip-even" class="mono" min="0" step="1" placeholder="18" inputmode="decimal" />
+        </div>
+      </div>
+    </div>
+
+    <div class="notice error hidden" id="method-error"></div>
+    <div class="btn-row">
+      <button class="btn ghost" id="method-back">Back</button>
+      <button class="btn jam" id="method-go">See the split</button>
+    </div>
+  </section>
+
+  <!-- 6a. Even result -->
+  <section class="screen" id="screen-even">
+    <h2 class="step">Everyone owes</h2>
+    <div class="stamp" id="even-stamp"></div>
+    <div id="even-breakdown"></div>
+    <div class="btn-row">
+      <button class="btn ghost" id="even-back">Adjust split</button>
+      <button class="btn" id="even-restart">New bill</button>
+    </div>
+  </section>
+
+  <!-- 6b. Individual result -->
+  <section class="screen" id="screen-individual">
+    <h2 class="step">Settle the table</h2>
+    <p class="lede">Check off what a person had, set their tip, and mark them paid.</p>
+
+    <div class="panel-title">Remaining</div>
+    <div id="remaining-list"></div>
+
+    <div id="builder">
+      <div class="inline" style="margin-top:.7rem">
+        <div class="field">
+          <label for="settle-name">Name (optional)</label>
+          <input type="text" id="settle-name" placeholder="e.g. Dana" />
+        </div>
+        <div class="field" style="max-width:6.5rem">
+          <label for="settle-tip">Tip %</label>
+          <input type="number" id="settle-tip" class="mono" min="0" step="1" placeholder="18" inputmode="decimal" />
+        </div>
+      </div>
+      <div class="notice error hidden" id="settle-error"></div>
+      <button class="btn jam" id="mark-paid">Mark paid</button>
+    </div>
+
+    <div class="panel-title">Settled so far</div>
+    <div id="settled-log"><p class="lede" style="margin:0">No one's settled up yet.</p></div>
+
+    <div class="totals-box" id="totals-box"></div>
+
+    <div id="all-settled"></div>
+
+    <div class="btn-row" style="margin-top:1.2rem">
+      <button class="btn" id="individual-restart">New bill</button>
+    </div>
+  </section>
+</main>
+
+<script>
+const $ = (id) => document.getElementById(id);
+const fmt = (n) => "$" + Number(n).toFixed(2);
+
+const state = {
+  billId: null,
+  rows: [],          // table rows: {name, price, qty}
+  remaining: [],     // server item objects for individual mode
+  pendingFile: null,
+};
+
+async function api(method, path, body) {
+  const opts = { method, headers: {} };
+  if (body !== undefined) {
+    opts.headers["Content-Type"] = "application/json";
+    opts.body = JSON.stringify(body);
+  }
+  const res = await fetch(path, opts);
+  const data = await res.json().catch(() => ({}));
+  if (!res.ok) {
+    throw new Error(detailOf(data) || `Request failed (${res.status})`);
+  }
+  return data;
+}
+
+function detailOf(data) {
+  if (!data) return "";
+  if (typeof data.detail === "string") return data.detail;
+  if (Array.isArray(data.detail)) return data.detail.map((d) => d.msg).join("; ");
+  return "";
+}
+
+function show(name) {
+  document.querySelectorAll(".screen").forEach((s) => s.classList.remove("active"));
+  $("screen-" + name).classList.add("active");
+  window.scrollTo({ top: 0, behavior: "smooth" });
+}
+
+function showError(id, msg) {
+  const el = $(id);
+  el.textContent = msg;
+  el.classList.remove("hidden");
+}
+function hide(id) { $(id).classList.add("hidden"); }
+
+// ---- Boot ----
+(async function init() {
+  try {
+    const bill = await api("POST", "/api/bills");
+    state.billId = bill.id;
+  } catch (e) {
+    document.querySelector(".check").innerHTML =
+      '<p class="notice error">Couldn\'t start a new bill. Please refresh.</p>';
+  }
+})();
+
+// ---- Entry ----
+$("go-manual").onclick = () => {
+  state.rows = [{ name: "", price: "", qty: 1 }];
+  renderRows();
+  hide("extract-warnings");
+  show("table");
+};
+$("go-camera").onclick = () => {
+  $("file-name").textContent = "";
+  state.pendingFile = null;
+  $("extract-btn").disabled = true;
+  hide("camera-error");
+  show("camera");
+};
+
+document.querySelectorAll("[data-back]").forEach((b) => {
+  b.onclick = () => show(b.dataset.back);
+});
+
+// ---- Camera ----
+$("receipt-input").onchange = (e) => {
+  const f = e.target.files[0];
+  if (!f) return;
+  state.pendingFile = f;
+  $("file-name").textContent = f.name;
+  $("extract-btn").disabled = false;
+  hide("camera-error");
+};
+
+$("extract-btn").onclick = async () => {
+  if (!state.pendingFile) return;
+  hide("camera-error");
+  $("camera-spinner").hidden = false;
+  $("extract-btn").disabled = true;
+  try {
+    const form = new FormData();
+    form.append("image", state.pendingFile);
+    const res = await fetch(`/api/bills/${state.billId}/extract`, { method: "POST", body: form });
+    const data = await res.json().catch(() => ({}));
+    if (!res.ok) throw new Error(detailOf(data) || "Extraction failed");
+
+    state.rows = (data.items || []).map((i) => ({ name: i.name, price: i.price, qty: 1 }));
+    if (state.rows.length === 0) state.rows = [{ name: "", price: "", qty: 1 }];
+    renderRows();
+
+    if (data.warnings && data.warnings.length) {
+      $("extract-warnings").innerHTML =
+        "Some rows needed a second look:<br>" + data.warnings.map(escapeHtml).join("<br>");
+      $("extract-warnings").classList.remove("hidden");
+    } else {
+      hide("extract-warnings");
+    }
+    show("table");
+  } catch (e) {
+    showError("camera-error", e.message + " — you can enter the bill manually instead.");
+  } finally {
+    $("camera-spinner").hidden = true;
+    $("extract-btn").disabled = false;
+  }
+};
+
+// ---- Table ----
+function renderRows() {
+  const wrap = $("rows");
+  wrap.innerHTML = "";
+  state.rows.forEach((row, i) => {
+    const div = document.createElement("div");
+    div.className = "item-row";
+    div.innerHTML = `
+      <input class="name" type="text" placeholder="Item" value="${escapeAttr(row.name)}" aria-label="Item name" />
+      <input class="price" type="number" min="0" step="0.01" inputmode="decimal" placeholder="0.00" value="${row.price}" aria-label="Price" />
+      <input class="qty" type="number" min="1" step="1" inputmode="numeric" value="${row.qty}" aria-label="Quantity" />
+      <button class="trash" title="Remove" aria-label="Remove item">✕</button>`;
+    div.querySelector(".name").oninput = (e) => (row.name = e.target.value);
+    div.querySelector(".price").oninput = (e) => (row.price = e.target.value);
+    div.querySelector(".qty").oninput = (e) => (row.qty = e.target.value);
+    div.querySelector(".trash").onclick = () => {
+      state.rows.splice(i, 1);
+      if (state.rows.length === 0) state.rows.push({ name: "", price: "", qty: 1 });
+      renderRows();
+    };
+    wrap.appendChild(div);
+  });
+}
+
+$("add-row").onclick = () => {
+  state.rows.push({ name: "", price: "", qty: 1 });
+  renderRows();
+  $("rows").lastElementChild.querySelector(".name").focus();
+};
+
+$("table-continue").onclick = async () => {
+  hide("table-error");
+  const items = [];
+  for (const row of state.rows) {
+    const name = (row.name || "").trim();
+    const price = parseFloat(row.price);
+    const qty = parseInt(row.qty, 10) || 1;
+    if (!name && !row.price) continue; // skip blank rows silently
+    if (!name) return showError("table-error", "Every item needs a name.");
+    if (!(price > 0)) return showError("table-error", `"${name}" needs a price above 0.`);
+    if (qty < 1) return showError("table-error", `"${name}" needs a quantity of at least 1.`);
+    items.push({ name, price, qty });
+  }
+  if (items.length === 0) return showError("table-error", "Add at least one item to continue.");
+
+  try {
+    const bill = await api("PUT", `/api/bills/${state.billId}/items`, { items });
+    renderFinalize(bill);
+    show("finalize");
+  } catch (e) {
+    showError("table-error", e.message);
+  }
+};
+
+// ---- Finalize ----
+function renderFinalize(bill) {
+  const subtotal = bill.items.reduce((s, i) => s + i.price, 0);
+  $("stub-party").textContent = `${bill.items.length} ITEM${bill.items.length === 1 ? "" : "S"}`;
+  let html = "";
+  bill.items.forEach((i) => {
+    html += `<div class="leader"><span class="lbl">${escapeHtml(i.name)}</span><span class="dots"></span><span class="val">${fmt(i.price)}</span></div>`;
+  });
+  html += `<hr class="rule" /><div class="leader big"><span class="lbl">Subtotal</span><span class="dots"></span><span class="val">${fmt(subtotal)}</span></div>`;
+  $("finalize-summary").innerHTML = html;
+}
+$("finalize-back").onclick = () => show("table");
+$("finalize-continue").onclick = async () => {
+  try {
+    await api("POST", `/api/bills/${state.billId}/finalize`);
+    $("method-error").classList.add("hidden");
+    show("method");
+  } catch (e) {
+    renderFinalize({ items: state.lastItems || [] });
+    show("table");
+  }
+};
+
+// ---- Split method ----
+document.querySelectorAll('input[name="method"]').forEach((r) => {
+  r.onchange = () => {
+    $("even-fields").style.display = currentMethod() === "even" ? "block" : "none";
+  };
+});
+function currentMethod() {
+  return document.querySelector('input[name="method"]:checked').value;
+}
+$("method-back").onclick = () => show("finalize");
+
+$("method-go").onclick = async () => {
+  hide("method-error");
+  if (currentMethod() === "even") {
+    const people = parseInt($("people").value, 10);
+    const tipRaw = $("tip-even").value;
+    if (!(people >= 1)) return showError("method-error", "Enter at least 1 person.");
+    if (tipRaw === "" || tipRaw === null) return showError("method-error", "Enter a tip % (0 is fine).");
+    const tip_pct = parseFloat(tipRaw);
+    if (!(tip_pct >= 0)) return showError("method-error", "Tip % can't be negative.");
+    try {
+      const res = await api("POST", `/api/bills/${state.billId}/split/even`, { people, tip_pct });
+      renderEven(res);
+      show("even");
+    } catch (e) {
+      showError("method-error", e.message);
+    }
+  } else {
+    try {
+      const bill = await api("GET", `/api/bills/${state.billId}`);
+      state.remaining = bill.items;
+      resetSettleScreen();
+      renderRemaining();
+      renderTotals({ paid_so_far: 0, remaining_amount: bill.items.reduce((s, i) => s + i.remaining, 0), total_tip_amount: 0, overall_tip_pct: 0 });
+      show("individual");
+    } catch (e) {
+      showError("method-error", e.message);
+    }
+  }
+};
+
+// ---- Even result ----
+function renderEven(res) {
+  const allSame = res.per_person.every((p) => p === res.per_person[0]);
+  const lead = res.per_person[0];
+  $("even-stamp").innerHTML = allSame
+    ? `<div class="who">Each of ${res.people}</div><div class="amt">${fmt(lead)}</div><div class="per">tip included</div>`
+    : `<div class="who">${res.people - 1} pay ${fmt(lead)} · last pays</div><div class="amt">${fmt(res.per_person[res.per_person.length - 1])}</div><div class="per">last person absorbs the rounding</div>`;
+
+  let html = `
+    <div class="leader"><span class="lbl">Subtotal</span><span class="dots"></span><span class="val">${fmt(res.subtotal)}</span></div>
+    <div class="leader"><span class="lbl">Tip (${res.tip_pct}%)</span><span class="dots"></span><span class="val">${fmt(res.tip_amount)}</span></div>
+    <div class="leader big"><span class="lbl">Total</span><span class="dots"></span><span class="val">${fmt(res.total)}</span></div>
+    <div class="leader"><span class="lbl">Split ${res.people} way${res.people === 1 ? "" : "s"}</span><span class="dots"></span><span class="val">${res.per_person.map(fmt).join(" · ")}</span></div>`;
+  $("even-breakdown").innerHTML = html;
+}
+$("even-back").onclick = () => show("method");
+$("even-restart").onclick = () => location.reload();
+
+// ---- Individual settle ----
+function resetSettleScreen() {
+  $("settle-name").value = "";
+  $("settle-tip").value = "";
+  $("settled-log").innerHTML = '<p class="lede" style="margin:0">No one\'s settled up yet.</p>';
+  $("all-settled").innerHTML = "";
+  hide("settle-error");
+}
+
+function renderRemaining() {
+  const wrap = $("remaining-list");
+  if (state.remaining.length === 0) { wrap.innerHTML = ""; return; }
+  wrap.innerHTML = "";
+  state.remaining.forEach((item) => {
+    const div = document.createElement("div");
+    div.className = "claim-row";
+    const settled = item.remaining < item.price - 0.005;
+    div.innerHTML = `
+      <input type="checkbox" data-id="${item.id}" aria-label="Claim ${escapeAttr(item.name)}" />
+      <div>
+        <div class="nm">${escapeHtml(item.name)}</div>
+        ${settled ? `<div class="bal">${fmt(item.remaining)} of ${fmt(item.price)} left</div>` : ""}
+      </div>
+      <div class="right">
+        <span class="divn">÷<input type="number" min="1" step="1" value="1" data-div="${item.id}" aria-label="Divide ${escapeAttr(item.name)} by" /></span>
+        <span class="price">${fmt(item.price)}</span>
+      </div>`;
+    wrap.appendChild(div);
+  });
+}
+
+$("mark-paid").onclick = async () => {
+  hide("settle-error");
+  const claims = [];
+  document.querySelectorAll('#remaining-list input[type=checkbox]:checked').forEach((cb) => {
+    const id = cb.dataset.id;
+    const dv = document.querySelector(`#remaining-list input[data-div="${id}"]`);
+    claims.push({ item_id: id, divide_by: parseInt(dv.value, 10) || 1 });
+  });
+  if (claims.length === 0) return showError("settle-error", "Check off at least one item.");
+  const tipRaw = $("settle-tip").value;
+  if (tipRaw === "") return showError("settle-error", "Enter a tip % for this batch (0 is fine).");
+  const tip_pct = parseFloat(tipRaw);
+  if (!(tip_pct >= 0)) return showError("settle-error", "Tip % can't be negative.");
+
+  try {
+    const res = await api("POST", `/api/bills/${state.billId}/settle`, {
+      name: $("settle-name").value.trim() || null,
+      claims,
+      tip_pct,
+    });
+    state.remaining = res.remaining_items;
+    renderRemaining();
+    renderLog(res.settled);
+    renderTotals(res.totals);
+    $("settle-name").value = "";
+    $("settle-tip").value = "";
+
+    if (res.all_settled) {
+      $("builder").style.display = "none";
+      renderAllSettled(res.totals, res.low_tip);
+    }
+  } catch (e) {
+    showError("settle-error", e.message);
+  }
+};
+
+function renderLog(settled) {
+  if (!settled || settled.length === 0) return;
+  const wrap = $("settled-log");
+  wrap.innerHTML = "";
+  settled.forEach((r, idx) => {
+    const who = r.name || `Batch ${idx + 1}`;
+    const items = r.items.map((it) => `${escapeHtml(it.name)} ${fmt(it.amount)}`).join(" · ");
+    const div = document.createElement("div");
+    div.className = "log-entry";
+    div.innerHTML = `
+      <div class="head"><span class="nm">${escapeHtml(who)}</span><span class="tot">${fmt(r.total)}</span></div>
+      <div class="det">${items} <span class="tip">· +${fmt(r.tip_amount)} tip (${r.tip_pct}%)</span></div>`;
+    wrap.appendChild(div);
+  });
+}
+
+function renderTotals(t) {
+  $("totals-box").innerHTML = `
+    <div class="leader"><span class="lbl">Paid so far</span><span class="dots"></span><span class="val">${fmt(t.paid_so_far)}</span></div>
+    <div class="leader"><span class="lbl">Still owed</span><span class="dots"></span><span class="val">${fmt(t.remaining_amount)}</span></div>
+    <div class="leader"><span class="lbl">Tip collected</span><span class="dots"></span><span class="val">${fmt(t.total_tip_amount)}</span></div>
+    <div class="leader"><span class="lbl">Effective tip</span><span class="dots"></span><span class="val">${Number(t.overall_tip_pct).toFixed(1)}%</span></div>`;
+}
+
+function renderAllSettled(t, lowTip) {
+  let html = `<div class="done-stamp">All settled 🎉</div>
+    <div class="leader big"><span class="lbl">Total paid</span><span class="dots"></span><span class="val">${fmt(t.paid_so_far)}</span></div>
+    <div class="leader"><span class="lbl">Tip across all batches</span><span class="dots"></span><span class="val">${fmt(t.total_tip_amount)}</span></div>
+    <div class="leader"><span class="lbl">Overall effective tip</span><span class="dots"></span><span class="val">${Number(t.overall_tip_pct).toFixed(1)}%</span></div>`;
+  if (lowTip) {
+    html += `<div class="nudge">Heads up — the table tipped <strong>${Number(t.overall_tip_pct).toFixed(1)}%</strong> overall. Standard is about 15–20% if you'd like to round it up.</div>`;
+  }
+  $("all-settled").innerHTML = html;
+}
+$("individual-restart").onclick = () => location.reload();
+
+// ---- Utils ----
+function escapeHtml(s) {
+  return String(s).replace(/[&<>"']/g, (c) => ({ "&": "&amp;", "<": "&lt;", ">": "&gt;", '"': "&quot;", "'": "&#39;" }[c]));
+}
+function escapeAttr(s) { return escapeHtml(s); }
+</script>
+</body>
+</html>
