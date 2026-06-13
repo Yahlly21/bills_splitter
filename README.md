@@ -1,4 +1,4 @@
-# Friday Brunch Bill Splitter
+# Cognitory Friday Brunch Bill Splitter
 
 A single-organizer web app that removes the awkward end-of-meal bill dance: one person enters
 the bill — **manually or by snapping a photo of the receipt** — reviews it as a clean editable
