@@ -40,10 +40,24 @@ _EXAMPLE_OUTPUT = {
 }
 
 _INSTRUCTION = (
-    "Extract every line item from this receipt as final, per-unit rows. "
-    "Return a JSON array of {name, price}; ignore subtotal / tax / total / tip "
-    "rows; prices as numbers. If a line shows a quantity (e.g. `2 X 6.60`), emit "
-    "one row per unit at the unit price — never a combined line."
+    "Extract every line item from this receipt as final, per-unit rows.\n\n"
+    "Receipt structure: Receipts typically have store/date info at the top, "
+    "line items in the middle, and totals/tax/tip info at the bottom. "
+    "Ignore everything except the actual product line items.\n\n"
+    "Ignore these row types:\n"
+    "- Store name, address, phone, website\n"
+    "- Date, time, receipt/transaction number\n"
+    "- Subtotal, tax/VAT, total, tip lines\n"
+    "- Payment method, change, balance due\n"
+    "- Thank you messages, return policies\n"
+    "- Loyalty program info\n\n"
+    "For each extracted item:\n"
+    "- Return {name, price} where name is the product description and price is a number\n"
+    "- If a line shows quantity (e.g. '2 X 6.60' or '2x€6.60'), emit one row per unit "
+    "at the unit price (never a combined line)\n"
+    "- Include size/weight descriptors in the name if present (e.g. '250g', '1L')\n"
+    "- Preserve original language/script in product names\n\n"
+    'Return JSON format: {"items": [{"name": "...", "price": <number>}, ...]}'
 )
 
 _OUTPUT_SCHEMA = {
@@ -105,7 +119,10 @@ def extract_items(image_bytes: bytes, media_type: str = "image/jpeg") -> dict:
             {
                 "role": "assistant",
                 "content": [
-                    {"type": "text", "text": json.dumps(_EXAMPLE_OUTPUT, ensure_ascii=False)}
+                    {
+                        "type": "text",
+                        "text": json.dumps(_EXAMPLE_OUTPUT, ensure_ascii=False),
+                    }
                 ],
             },
             {
@@ -124,7 +141,9 @@ def extract_items(image_bytes: bytes, media_type: str = "image/jpeg") -> dict:
         raw = json.loads(text)
         raw_items = raw["items"]
     except (json.JSONDecodeError, KeyError, TypeError) as exc:
-        raise RuntimeError("Could not parse the receipt — try again or enter it manually.") from exc
+        raise RuntimeError(
+            "Could not parse the receipt — try again or enter it manually."
+        ) from exc
 
     items: list[dict] = []
     warnings: list[str] = []
@@ -135,7 +154,11 @@ def extract_items(image_bytes: bytes, media_type: str = "image/jpeg") -> dict:
                 raise ValueError("price must be greater than 0")
             items.append({"name": extracted.name, "price": round(extracted.price, 2)})
         except (ValidationError, ValueError) as exc:
-            label = candidate.get("name") if isinstance(candidate, dict) else f"row {idx + 1}"
+            label = (
+                candidate.get("name")
+                if isinstance(candidate, dict)
+                else f"row {idx + 1}"
+            )
             warnings.append(f"Skipped an unreadable item ({label}): {exc}")
 
     return {"items": items, "warnings": warnings}
