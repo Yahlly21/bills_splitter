@@ -554,13 +554,16 @@
 
 <script>
 const $ = (id) => document.getElementById(id);
-const fmt = (n) => "$" + Number(n).toFixed(2);
+const currencySymbols = { ILS: "₪", EUR: "€", USD: "$" };
+const fmt = (n) => `${currencySymbols[state.currency] || "$"}${Number(n).toFixed(2)}`;
 
 const state = {
   billId: null,
   rows: [],          // table rows: {name, price, qty}
   remaining: [],     // server item objects for individual mode
   pendingFile: null,
+  currency: "ILS",
+  finalizeBill: null,
 };
 
 async function api(method, path, body) {
@@ -734,13 +737,28 @@ $("table-continue").onclick = async () => {
 
 // ---- Finalize ----
 function renderFinalize(bill) {
+  state.finalizeBill = bill;
   const subtotal = bill.items.reduce((s, i) => s + i.price, 0);
   let html = "";
   bill.items.forEach((i) => {
     html += `<div class="leader"><span class="lbl">${escapeHtml(i.name)}</span><span class="dots"></span><span class="val">${fmt(i.price)}</span></div>`;
   });
-  html += `<hr class="rule" /><div class="leader big"><span class="lbl">Subtotal</span><span class="dots"></span><span class="val">${fmt(subtotal)}</span></div>`;
+  html += `
+    <hr class="rule" />
+    <div class="field">
+      <label for="currency">Currency</label>
+      <select id="currency" class="mono">
+        <option value="ILS"${state.currency === "ILS" ? " selected" : ""}>ILS (₪)</option>
+        <option value="EUR"${state.currency === "EUR" ? " selected" : ""}>EU (€)</option>
+        <option value="USD"${state.currency === "USD" ? " selected" : ""}>USD ($)</option>
+      </select>
+    </div>
+    <div class="leader big"><span class="lbl">Subtotal</span><span class="dots"></span><span class="val">${fmt(subtotal)}</span></div>`;
   $("finalize-summary").innerHTML = html;
+  $("currency").onchange = (e) => {
+    state.currency = e.target.value;
+    renderFinalize(state.finalizeBill);
+  };
 }
 $("finalize-back").onclick = () => show("table");
 $("finalize-continue").onclick = async () => {
