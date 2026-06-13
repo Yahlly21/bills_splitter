@@ -650,8 +650,16 @@ $("extract-btn").onclick = async () => {
     const data = await res.json().catch(() => ({}));
     if (!res.ok) throw new Error(detailOf(data) || "Extraction failed");
 
-    state.rows = (data.items || []).map((i) => ({ name: i.name, price: i.price, qty: 1 }));
-    if (state.rows.length === 0) state.rows = [{ name: "", price: "", qty: 1 }];
+    const extractedItems = data.items || [];
+    if (extractedItems.length === 0) {
+      state.pendingFile = null;
+      $("receipt-input").value = "";
+      $("file-name").textContent = "";
+      showError("camera-error", "We couldn't find any bill items in that photo. Upload another photo or enter the bill manually.");
+      return;
+    }
+
+    state.rows = extractedItems.map((i) => ({ name: i.name, price: i.price, qty: 1 }));
     renderRows();
 
     if (data.warnings && data.warnings.length) {
@@ -666,7 +674,7 @@ $("extract-btn").onclick = async () => {
     showError("camera-error", e.message + " — you can enter the bill manually instead.");
   } finally {
     $("camera-spinner").hidden = true;
-    $("extract-btn").disabled = false;
+    $("extract-btn").disabled = !state.pendingFile;
   }
 };
 
