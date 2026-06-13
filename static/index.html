@@ -301,6 +301,34 @@
   .divn { display: inline-flex; align-items: center; gap: .25rem; font-family: var(--mono); font-size: .72rem; color: var(--ink-soft); }
   .divn input { width: 2.6rem; text-align: center; font-family: var(--mono); border: 1.5px solid var(--line); border-radius: 6px; padding: .25rem; }
 
+  .batch-preview {
+    background: #fff;
+    border: 2px solid var(--ink);
+    border-radius: 12px;
+    padding: .75rem .85rem;
+    margin: .1rem 0 .8rem;
+  }
+  .batch-preview .preview-title {
+    font-family: var(--mono);
+    font-size: .62rem;
+    letter-spacing: .14em;
+    text-transform: uppercase;
+    color: var(--ink-soft);
+  }
+  .batch-preview .preview-total {
+    font-family: var(--disp);
+    font-weight: 800;
+    font-size: 1.65rem;
+    line-height: 1;
+    margin-top: .25rem;
+    font-variant-numeric: tabular-nums;
+  }
+  .batch-preview .preview-detail {
+    color: var(--ink-soft);
+    font-size: .82rem;
+    margin-top: .25rem;
+  }
+
   .log-entry {
     border: 1.5px solid var(--line);
     border-radius: 10px;
@@ -534,6 +562,11 @@
           <label for="settle-tip">Tip %</label>
           <input type="number" id="settle-tip" class="mono" min="0" step="1" placeholder="18" inputmode="decimal" />
         </div>
+      </div>
+      <div class="batch-preview" id="batch-preview">
+        <div class="preview-title">Amount to collect</div>
+        <div class="preview-total" id="batch-total">Insert tip</div>
+        <div class="preview-detail" id="batch-detail">Select items and enter tip.</div>
       </div>
       <div class="notice error hidden" id="settle-error"></div>
       <button class="btn jam" id="mark-paid">Mark paid</button>
@@ -832,17 +865,62 @@ $("even-back").onclick = () => show("method");
 $("even-restart").onclick = () => location.reload();
 
 // ---- Individual settle ----
+$("settle-name").oninput = updateBatchPreview;
+$("settle-tip").oninput = updateBatchPreview;
+
 function resetSettleScreen() {
   $("settle-name").value = "";
   $("settle-tip").value = "";
   $("settled-log").innerHTML = '<p class="lede" style="margin:0">No one\'s settled up yet.</p>';
   $("all-settled").innerHTML = "";
   hide("settle-error");
+  updateBatchPreview();
+}
+
+function selectedClaims() {
+  const claims = [];
+  document.querySelectorAll('#remaining-list input[type=checkbox]:checked').forEach((cb) => {
+    const id = cb.dataset.id;
+    const dv = document.querySelector(`#remaining-list input[data-div="${id}"]`);
+    claims.push({ item_id: id, divide_by: parseInt(dv.value, 10) || 1 });
+  });
+  return claims;
+}
+
+function updateBatchPreview() {
+  const claims = selectedClaims();
+  const tipRaw = $("settle-tip").value;
+  const tipPct = tipRaw === "" ? null : parseFloat(tipRaw);
+  const itemsById = new Map(state.remaining.map((item) => [item.id, item]));
+  const subtotal = claims.reduce((sum, claim) => {
+    const item = itemsById.get(claim.item_id);
+    return item ? sum + item.price / claim.divide_by : sum;
+  }, 0);
+  const validTip = tipPct !== null && tipPct >= 0;
+  const tipAmount = validTip ? subtotal * tipPct / 100 : 0;
+  const total = subtotal + tipAmount;
+  const name = $("settle-name").value.trim();
+  const who = name || "This person";
+
+  if (claims.length === 0) {
+    $("batch-total").textContent = "Insert tip";
+    $("batch-detail").textContent = "Select items and enter tip.";
+  } else if (!validTip) {
+    $("batch-total").textContent = "Insert tip";
+    $("batch-detail").textContent = `${who}: enter tip % to show the final amount.`;
+  } else {
+    $("batch-total").textContent = fmt(total);
+    $("batch-detail").textContent = `${who} owes ${fmt(total)} including ${fmt(tipAmount)} tip.`;
+  }
 }
 
 function renderRemaining() {
   const wrap = $("remaining-list");
-  if (state.remaining.length === 0) { wrap.innerHTML = ""; return; }
+  if (state.remaining.length === 0) {
+    wrap.innerHTML = "";
+    updateBatchPreview();
+    return;
+  }
   wrap.innerHTML = "";
   state.remaining.forEach((item) => {
     const div = document.createElement("div");
@@ -858,18 +936,16 @@ function renderRemaining() {
         <span class="divn">÷<input type="number" min="1" step="1" value="1" data-div="${item.id}" aria-label="Divide ${escapeAttr(item.name)} by" /></span>
         <span class="price">${fmt(item.price)}</span>
       </div>`;
+    div.querySelector('input[type=checkbox]').onchange = updateBatchPreview;
+    div.querySelector('input[data-div]').oninput = updateBatchPreview;
     wrap.appendChild(div);
   });
+  updateBatchPreview();
 }
 
 $("mark-paid").onclick = async () => {
   hide("settle-error");
-  const claims = [];
-  document.querySelectorAll('#remaining-list input[type=checkbox]:checked').forEach((cb) => {
-    const id = cb.dataset.id;
-    const dv = document.querySelector(`#remaining-list input[data-div="${id}"]`);
-    claims.push({ item_id: id, divide_by: parseInt(dv.value, 10) || 1 });
-  });
+  const claims = selectedClaims();
   if (claims.length === 0) return showError("settle-error", "Check off at least one item.");
   const tipRaw = $("settle-tip").value;
   if (tipRaw === "") return showError("settle-error", "Enter a tip % for this batch (0 is fine).");
@@ -888,6 +964,7 @@ $("mark-paid").onclick = async () => {
     renderTotals(res.totals);
     $("settle-name").value = "";
     $("settle-tip").value = "";
+    updateBatchPreview();
 
     if (res.all_settled) {
       $("builder").style.display = "none";
